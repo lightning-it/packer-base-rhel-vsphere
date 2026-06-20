@@ -1,10 +1,10 @@
-# packer-base-vsphere
+# packer-vsphere-template-sources
 
-Packer templates to build hardened, reusable Linux source templates on VMware
-vSphere from vendor installation ISO media.
+Packer templates for building cross-platform vSphere source images, consumed by
+Ansible workflows that clone, bootstrap, and publish final templates.
 
-This repository builds RHEL 8/9/10 and Ubuntu Server 24.04/26.04 source
-objects.
+The current implementation builds RHEL 8/9/10 and Ubuntu Server 24.04/26.04
+source objects from vendor installation ISO media.
 
 ## Purpose
 
