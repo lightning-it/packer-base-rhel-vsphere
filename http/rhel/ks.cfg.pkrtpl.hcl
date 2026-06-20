@@ -9,7 +9,14 @@ lang ${locale}
 keyboard --xlayouts='${keyboard_layout}'
 timezone ${timezone} --utc
 
-network --bootproto=dhcp --device=link --activate --onboot=yes --hostname=${host_name}.${hostname_domain}
+%{ if installer_ip != "" && installer_netmask != "" && installer_gateway != "" ~}
+network --bootproto=static --device=link --activate --onboot=yes --ip=${installer_ip} --netmask=${installer_netmask} --gateway=${installer_gateway} --nameserver=${installer_nameserver} --hostname=${host_name}.${hostname_domain}
+%{ else ~}
+network --bootproto=dhcp --device=link --activate --onboot=yes --nameserver=${installer_nameserver} --hostname=${host_name}.${hostname_domain}
+%{ endif ~}
+%{ if rhsm_organization != "" && rhsm_activation_key != "" ~}
+rhsm --organization="${rhsm_organization}" --activation-key="${rhsm_activation_key}"
+%{ endif ~}
 
 rootpw --lock
 user --name=${installer_username} --groups=wheel --plaintext --password=${installer_password}
@@ -53,6 +60,79 @@ chmod 0440 /etc/sudoers.d/90-${installer_username}
 systemctl enable sshd
 systemctl enable vmtoolsd
 systemctl enable chronyd
+
+mkdir -p /etc/ssh/sshd_config.d
+cat >/etc/ssh/sshd_config.d/10-packer-password-auth.conf <<'EOF'
+PasswordAuthentication yes
+KbdInteractiveAuthentication yes
+UsePAM yes
+EOF
+restorecon -Rv /etc/ssh/sshd_config.d || true
+
+%{ if installer_ip != "" && installer_netmask != "" && installer_gateway != "" ~}
+mkdir -p /etc/NetworkManager/system-connections /etc/cloud/cloud.cfg.d
+cat >/etc/cloud/cloud.cfg.d/99-disable-network-config.cfg <<'EOF'
+network: {config: disabled}
+EOF
+
+prefix=24
+case "${installer_netmask}" in
+  255.255.255.255) prefix=32 ;;
+  255.255.255.252) prefix=30 ;;
+  255.255.255.248) prefix=29 ;;
+  255.255.255.240) prefix=28 ;;
+  255.255.255.224) prefix=27 ;;
+  255.255.255.192) prefix=26 ;;
+  255.255.255.128) prefix=25 ;;
+  255.255.255.0) prefix=24 ;;
+  255.255.254.0) prefix=23 ;;
+  255.255.252.0) prefix=22 ;;
+  255.255.248.0) prefix=21 ;;
+  255.255.240.0) prefix=20 ;;
+  255.255.224.0) prefix=19 ;;
+  255.255.192.0) prefix=18 ;;
+  255.255.128.0) prefix=17 ;;
+  255.255.0.0) prefix=16 ;;
+esac
+
+cat >/etc/NetworkManager/system-connections/template-dmz.nmconnection <<EOF
+[connection]
+id=template-dmz
+type=ethernet
+interface-name=ens33
+autoconnect=true
+
+[ipv4]
+method=manual
+address1=${installer_ip}/$${prefix},${installer_gateway}
+dns=${installer_nameserver};
+may-fail=false
+
+[ipv6]
+method=disabled
+EOF
+chmod 0600 /etc/NetworkManager/system-connections/template-dmz.nmconnection
+%{ endif ~}
+
+%{ if installer_secondary_ip != "" ~}
+cat >/etc/NetworkManager/system-connections/template-mgmt.nmconnection <<EOF
+[connection]
+id=template-mgmt
+type=ethernet
+interface-name=ens34
+autoconnect=true
+
+[ipv4]
+method=manual
+address1=${installer_secondary_ip}
+never-default=true
+may-fail=false
+
+[ipv6]
+method=disabled
+EOF
+chmod 0600 /etc/NetworkManager/system-connections/template-mgmt.nmconnection
+%{ endif ~}
 
 dnf -y clean all || true
 rm -rf /tmp/* /var/tmp/*

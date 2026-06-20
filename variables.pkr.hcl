@@ -59,6 +59,12 @@ variable "vsphere_network" {
   description = "Port group for the temporary build VM."
 }
 
+variable "vsphere_network_secondary" {
+  type        = string
+  description = "Optional second port group for the temporary build VM."
+  default     = ""
+}
+
 variable "vm_name" {
   type        = string
   description = "Source object name. Defaults to rhel-<major>-minimal."
@@ -188,6 +194,55 @@ variable "installer_password_hash" {
   default     = ""
 }
 
+variable "rhsm_organization" {
+  type        = string
+  description = "Optional Red Hat organization ID for RHEL CDN installs from boot media."
+  default     = ""
+}
+
+variable "rhsm_activation_key" {
+  type        = string
+  description = "Optional Red Hat activation key for RHEL CDN installs from boot media."
+  default     = ""
+  sensitive   = true
+}
+
+variable "rhel_installer_ip" {
+  type        = string
+  description = "Optional static IPv4 address for the RHEL installer environment."
+  default     = ""
+}
+
+variable "rhel_installer_netmask" {
+  type        = string
+  description = "Optional static IPv4 netmask for the RHEL installer environment."
+  default     = ""
+}
+
+variable "rhel_installer_gateway" {
+  type        = string
+  description = "Optional default gateway for the RHEL installer environment."
+  default     = ""
+}
+
+variable "rhel_installer_nameserver" {
+  type        = string
+  description = "DNS server for the RHEL installer environment."
+  default     = "1.1.1.1"
+}
+
+variable "rhel_installer_hostname" {
+  type        = string
+  description = "Optional hostname for the RHEL installer environment."
+  default     = ""
+}
+
+variable "rhel_installer_secondary_ip" {
+  type        = string
+  description = "Optional static IPv4 CIDR address for the second installed RHEL interface."
+  default     = ""
+}
+
 variable "hostname_domain" {
   type        = string
   description = "Domain suffix used for the temporary installer hostname."
@@ -268,11 +323,11 @@ variable "boot_wait" {
 
 variable "boot_command" {
   type        = list(string)
-  description = "Boot command used to add the Kickstart URL to the RHEL installer."
+  description = "Boot command used to add the Kickstart path to the RHEL installer."
   default = [
     "e<wait>",
     "<down><down><end>",
-    " inst.text inst.ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/rhel.ks",
+    " inst.text inst.ks=cdrom:/rhel.ks",
     "<leftCtrlOn>x<leftCtrlOff>"
   ]
 }
