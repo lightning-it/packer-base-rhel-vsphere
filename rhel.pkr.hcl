@@ -70,34 +70,36 @@ source "vsphere-iso" "rhel" {
   cd_label = "OEMDRV"
   cd_content = {
     "/rhel.ks" = templatefile("${path.root}/http/rhel/ks.cfg.pkrtpl.hcl", {
-      rhel_major             = var.rhel_major
-      vm_name                = local.vm_name
-      host_name              = local.host_name
-      hostname_domain        = var.hostname_domain
-      installer_username     = var.installer_username
-      installer_password     = local.ssh_password
-      rhsm_organization      = var.rhsm_organization
-      rhsm_activation_key    = var.rhsm_activation_key
-      installer_ip           = var.rhel_installer_ip
-      installer_netmask      = var.rhel_installer_netmask
-      installer_gateway      = var.rhel_installer_gateway
-      installer_nameserver   = var.rhel_installer_nameserver
-      installer_secondary_ip = var.rhel_installer_secondary_ip
-      timezone               = var.timezone
-      keyboard_layout        = var.keyboard_layout
-      locale                 = var.locale
+      rhel_major                = var.rhel_major
+      vm_name                   = local.vm_name
+      host_name                 = local.host_name
+      hostname_domain           = var.hostname_domain
+      installer_username        = var.installer_username
+      installer_password        = local.ssh_password
+      installer_authorized_keys = var.installer_authorized_keys
+      rhsm_organization         = var.rhsm_organization
+      rhsm_activation_key       = var.rhsm_activation_key
+      installer_ip              = var.rhel_installer_ip
+      installer_netmask         = var.rhel_installer_netmask
+      installer_gateway         = var.rhel_installer_gateway
+      installer_nameserver      = var.rhel_installer_nameserver
+      installer_secondary_ip    = var.rhel_installer_secondary_ip
+      timezone                  = var.timezone
+      keyboard_layout           = var.keyboard_layout
+      locale                    = var.locale
     })
   }
 
   boot_wait    = var.boot_wait
   boot_command = var.boot_command
 
-  communicator = "ssh"
-  ssh_username = var.installer_username
-  ssh_password = var.installer_password
-  ssh_timeout  = var.ssh_timeout
+  communicator         = "ssh"
+  ssh_username         = var.installer_username
+  ssh_password         = var.installer_private_key_file == "" ? var.installer_password : null
+  ssh_private_key_file = var.installer_private_key_file != "" ? var.installer_private_key_file : null
+  ssh_timeout          = var.ssh_timeout
 
-  shutdown_command = "echo '${local.ssh_password}' | sudo -S /sbin/shutdown -h now"
+  shutdown_command = "sudo -n /sbin/shutdown -h now"
   shutdown_timeout = var.shutdown_timeout
 
   convert_to_template = var.convert_to_template

@@ -57,14 +57,25 @@ ${installer_username} ALL=(ALL) NOPASSWD: ALL
 EOF
 chmod 0440 /etc/sudoers.d/90-${installer_username}
 
+%{ if length(installer_authorized_keys) > 0 ~}
+install -d -m 0700 -o ${installer_username} -g ${installer_username} /home/${installer_username}/.ssh
+cat >/home/${installer_username}/.ssh/authorized_keys <<'EOF'
+%{ for ssh_key in installer_authorized_keys ~}
+${ssh_key}
+%{ endfor ~}
+EOF
+chown ${installer_username}:${installer_username} /home/${installer_username}/.ssh/authorized_keys
+chmod 0600 /home/${installer_username}/.ssh/authorized_keys
+%{ endif ~}
+
 systemctl enable sshd
 systemctl enable vmtoolsd
 systemctl enable chronyd
 
 mkdir -p /etc/ssh/sshd_config.d
 cat >/etc/ssh/sshd_config.d/10-packer-password-auth.conf <<'EOF'
-PasswordAuthentication yes
-KbdInteractiveAuthentication yes
+PasswordAuthentication no
+KbdInteractiveAuthentication no
 UsePAM yes
 EOF
 restorecon -Rv /etc/ssh/sshd_config.d || true

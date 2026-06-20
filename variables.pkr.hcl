@@ -194,6 +194,18 @@ variable "installer_password_hash" {
   default     = ""
 }
 
+variable "installer_authorized_keys" {
+  type        = list(string)
+  description = "SSH public keys installed for the temporary installer/repair account."
+  default     = []
+}
+
+variable "installer_private_key_file" {
+  type        = string
+  description = "Private key file used by Packer to SSH as the installer account. Leave empty to use password auth."
+  default     = ""
+}
+
 variable "rhsm_organization" {
   type        = string
   description = "Optional Red Hat organization ID for RHEL CDN installs from boot media."
